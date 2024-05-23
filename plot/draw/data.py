@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import re
@@ -72,7 +73,7 @@ class ReadResults:
             all_configs, config_ids, elite_ids = self.all_config_parameters()
         else:
             all_configs, config_ids, elite_ids = self.else_config_parameters()
-        
+
         return all_configs, config_ids, elite_ids, self.parameters
 
     def load_for_configurations(self):
@@ -156,14 +157,14 @@ class ReadResults:
         for folder in self.folders:
             name = os.path.basename(folder)
             exp_names.append(name)
-            elite_ids[name] = set()
+            elite_ids[name] = []
             i = 0
             with open(os.path.join(folder, self.elite_log), "r") as f1:
                 for line in f1:
                     if i > 0 and i <= self.num_config :
                         elite_id = int(line.split(',')[-2])
                         elitist_ids['elitist'].append(elite_id)
-                        elite_ids[name].add(elite_id)
+                        elite_ids[name].append(elite_id)
                     i += 1
             f1.close()
 
@@ -189,6 +190,44 @@ class ReadResults:
 
         return all_data, exp_names, elitist_ids
 
+    def all_quality_ins(self, folder):
+        """
+        Read Crace results of the at most top5 elite configurations
+        """
+
+        all_data = pd.DataFrame()
+        exp_names = []
+
+        name = os.path.basename(folder)
+        exp_names.append(name)
+
+        chunk_size = 5000
+        tmp = []
+        with open(os.path.join(folder, self.exps_fin), "r") as f2:
+            line = f2.readline()
+            while line:
+                chunk_size -= 1
+                line_results = json.loads(line)
+                current_id = int(line_results["configuration_id"])
+                current_ins = int(line_results["instance_id"])
+                instance_dict = {'exp_name': name, 'config_id': current_id, 'instance_id': current_ins}
+                tmp.append(instance_dict)
+                line = f2.readline()
+                if not line or chunk_size == 0:
+                    tmp = pd.DataFrame(tmp)
+                    all_data = pd.concat([all_data, tmp], ignore_index=True)
+                    tmp = []
+                    chunk_size = 5000
+            f2.close()
+
+        n_ins = all_data.groupby(['exp_name', 'config_id']).size().reset_index(name='n_ins')
+        new_data = all_data[['exp_name', 'config_id']].drop_duplicates()
+        new_data = pd.merge(new_data, n_ins, on=['exp_name', 'config_id'], how='left')
+
+        new_data.sort_values(by='config_id', inplace=True)
+
+        return new_data
+
     def elite_config_parameters(self):
         """
         Read the at least top 5 configurations from the provided Crace results
@@ -202,7 +241,7 @@ class ReadResults:
         for folder in self.folders:
             name = os.path.basename(folder)
             exp_names.append(name)
-            elite_ids[name] = set()
+            elite_ids[name] = []
             config_ids = set()
             i = 0
             # read elite_log file to get the elitist configuration id
@@ -210,9 +249,12 @@ class ReadResults:
                 for line in f1:
                     if i > 0 and i <= self.num_config:
                         elite_id = int(line.split(',')[-2])
-                        elite_ids[name].add(elite_id)
+                        elite_ids[name].append(elite_id)
                     i += 1
             f1.close()
+
+            self.exps_fin = "race_log/exps_fin.log"
+            ins_data = self.all_quality_ins(folder)
 
             # read config_log file to get the details of each elitist configuration 
             chunk_size = 5000
@@ -244,6 +286,10 @@ class ReadResults:
                         chunk_size = 5000
             f2.close()    
 
+        all_configs = pd.merge(ins_data, all_configs, on=['exp_name', 'config_id'], how='right')
+        all_configs['n_ins'].fillna(0, inplace=True)
+        all_configs['n_ins'] = all_configs['n_ins'].astype(int)
+
         return all_configs, exp_names, elite_ids
 
     def all_elite_config_parameters(self):
@@ -259,13 +305,16 @@ class ReadResults:
         for folder in self.folders:
             name = os.path.basename(folder)
             exp_names.append(name)
-            elite_ids[name] = set()
+            elite_ids[name] = []
             config_ids = set()
             # read elites.log file to get the elitist configuration id
             with open(os.path.join(folder, self.all_elites), "r") as f1:
                 for line in f1:
-                    elite_ids[name].add(int(re.sub("\D", "", line)))
+                    elite_ids[name].append(int(re.sub("\D", "", line)))
             f1.close()
+
+            self.exps_fin = "race_log/exps_fin.log"
+            ins_data = self.all_quality_ins(folder)
 
             chunk_size = 5000
             tmp = []
@@ -293,7 +342,11 @@ class ReadResults:
                         all_configs = pd.concat([all_configs, tmp], ignore_index=True)
                         tmp = []
                         chunk_size = 5000
-            f2.close()    
+            f2.close()
+
+        all_configs = pd.merge(ins_data, all_configs, on=['exp_name', 'config_id'], how='right')
+        all_configs['n_ins'].fillna(0, inplace=True)
+        all_configs['n_ins'] = all_configs['n_ins'].astype(int)
 
         return all_configs, exp_names, elite_ids
 
@@ -312,7 +365,7 @@ class ReadResults:
         for folder in self.folders:
             name = os.path.basename(folder)
             exp_names.append(name)
-            elite_ids[name] = set()
+            elite_ids[name] = []
             config_ids = set()
             i = 0
             # read elite_log file to get the elitist configuration id
@@ -320,11 +373,14 @@ class ReadResults:
                 for line in f1:
                     if i == 1:
                         elite_id = int(line.split(',')[-2])
-                        elite_ids[name].add(elite_id)
+                        elite_ids[name].append(elite_id)
                         elitist_ids['elitist'].append(elite_id)
                         break
                     i += 1
             f1.close()
+
+            self.exps_fin = "race_log/exps_fin.log"
+            ins_data = self.all_quality_ins(folder)
 
             # read config_log file to get the details of each elitist configuration 
             chunk_size = 5000
@@ -354,6 +410,10 @@ class ReadResults:
                         chunk_size = 5000
             f2.close()
 
+        all_configs = pd.merge(ins_data, all_configs, on=['exp_name', 'config_id'], how='right')
+        all_configs['n_ins'].fillna(0, inplace=True)
+        all_configs['n_ins'] = all_configs['n_ins'].astype(int)
+
         return all_configs, exp_names, elitist_ids
 
     def all_config_parameters(self):
@@ -370,7 +430,7 @@ class ReadResults:
         for folder in self.folders:
             name = os.path.basename(folder)
             exp_names.append(name)
-            elite_ids[name] = set()
+            elite_ids[name] = []
             config_ids = set()
             i = 0
             # read elite_log file to get the elitist configuration id
@@ -378,9 +438,12 @@ class ReadResults:
                 for line in f1:
                     if i > 0 and i <= 5:
                         elite_id = int(line.split(',')[-2])
-                        elite_ids[name].add(elite_id)
+                        elite_ids[name].append(elite_id)
                     i += 1
             f1.close()
+
+            self.exps_fin = "race_log/exps_fin.log"
+            ins_data = self.all_quality_ins(folder)
 
             slice_ids[name] = []
             with open(os.path.join(folder, self.slice_log)) as f1:
@@ -398,7 +461,7 @@ class ReadResults:
                     # slice_id = int(line.split(' ')[-1])
                     # slice_ids[name].append(slice_id)
             f1.close()
-
+            print(slice_ids[name])
             i_slice = 0
             # read config_log file to get the details of each elitist configuration 
             # this file may be a big file
@@ -415,14 +478,10 @@ class ReadResults:
                         # if i_slice < len(slice_ids[name]) and config_id > slice_ids[name][i_slice]:
                         if i_slice < len(slice_ids[name]) and config_id > slice_ids[name][i_slice][1]:
                             i_slice += 1
+                            print(i_slice+1, config_id)
                         params = re.sub('"','',line.split('{')[1].split('}')[0])
                         # all slices
-                        # param_dict = {'exp_name': name, 'n_slice': i_slice+1, 'config_id': config_id}
-                        # brief slice
-                        if i_slice < len(slice_ids[name]):
-                            param_dict = {'exp_name': name, 'n_slice': slice_ids[name][i_slice][0], 'config_id': config_id}
-                        else:
-                            param_dict = {'exp_name': name, 'n_slice': slice_ids[name][i_slice-1][0]+1, 'config_id': config_id}
+                        param_dict = {'exp_name': name, 'n_slice': i_slice+1, 'config_id': config_id}
                         for pa in params.split(', '):
                             param_name = pa.split(': ')[0]
                             param_value = pa.split(': ')[1]
@@ -439,6 +498,10 @@ class ReadResults:
                         tmp = []
                         chunk_size = 5000
             f2.close()
+
+        all_configs = pd.merge(ins_data, all_configs, on=['exp_name', 'config_id'], how='right')
+        all_configs['n_ins'].fillna(0, inplace=True)
+        all_configs['n_ins'] = all_configs['n_ins'].astype(int)
 
         return all_configs, exp_names, elite_ids
 
@@ -457,7 +520,7 @@ class ReadResults:
         for folder in self.folders:
             name = os.path.basename(folder)
             exp_names.append(name)
-            elite_ids[name] = set()
+            elite_ids[name] = []
             config_ids = set()
             i = 0
             # read elite_log file to get the elitist configuration id
@@ -465,9 +528,12 @@ class ReadResults:
                 for line in f1:
                     if i > 0 and i <= self.num_config:
                         elite_id = int(line.split(',')[-2])
-                        elite_ids[name].add(elite_id)
+                        elite_ids[name].append(elite_id)
                     i += 1
             f1.close()
+
+            self.exps_fin = "race_log/exps_fin.log"
+            ins_data = self.all_quality_ins(folder)
 
             # firstly read the elite configurations
             chunk_size = 5000
@@ -523,6 +589,10 @@ class ReadResults:
                     tmp.append(param_dict)
             tmp = pd.DataFrame(tmp)
             all_configs = pd.concat([all_configs, tmp], ignore_index=True)
+
+        all_configs = pd.merge(ins_data, all_configs, on=['exp_name', 'config_id'], how='right')
+        all_configs['n_ins'].fillna(0, inplace=True)
+        all_configs['n_ins'] = all_configs['n_ins'].astype(int)
 
         return all_configs, exp_names, elite_ids
 

@@ -48,13 +48,16 @@ function search_elite_configs(){
     cd $dir
 
     # read the index of configurations
-    cat $CONFIG_FILE | while read line
-    do
-        INDEX=$( echo $line | cut -d '{' -f1 | cut -d ',' -f1 )
-        if [ $elite_num == $INDEX ]; then
-           echo "$line" >> $ELITES_CONFIG 
-        fi
-    done
+    # cat $CONFIG_FILE | while read line
+    # do
+    #     INDEX=$( echo $line | cut -d '{' -f1 | cut -d ',' -f1 )
+    #     if [ $elite_num == $INDEX ]; then
+    #        echo "$line" >> $ELITES_CONFIG 
+    #     fi
+    # done
+
+    awk -v idx="$elite_num" -F, '{if ($1 == idx) print $0}' $CONFIG_FILE >> $ELITES_CONFIG
+
 }
 
 function main(){
@@ -78,7 +81,7 @@ function main(){
         # rm -rf $DIR_FILE/$ELITES_FILE
         # touch $DIR_FILE/$ELITES_FILE
         rm -rf $ELITES_FILE $ELITES_CONFIG
-        touch $ELITES_FILE #$ELITES_CONFIG
+        touch $ELITES_FILE $ELITES_CONFIG
 
         # get and save the index of elite configurations
         # grep "|" crace.train | grep -E '[0-9]+$' | awk '{print $NF}' | cut -d ',' -f1 | grep -o '^[0-9]\+' | sort -n | uniq > $DIR_FILE/$ELITES_FILE
@@ -89,15 +92,15 @@ function main(){
         printf "#   $DIR_FILE/$ELITES_FILE\n"
 
         # check config.log in folder race_log
-        # cat $ELITES_FILE | while read line
-        # do  
-        #     elite=$( echo $line | grep -E '^[0-9][0-9]*$' )
-        #     if [[ "$elite" =~ ^[0-9][0-9]*$ ]]; then	
-        #         search_elite_configs $elite $DIR_FILE
-        #     fi
-        # done
-        # len=`expr length "$DIR_FILE"`
-        # printf "#   %${len}s  $ELITES_CONFIG\n" 
+        cat $ELITES_FILE | while read line
+        do  
+            elite=$( echo $line | grep -E '^[0-9][0-9]*$' )
+            if [[ "$elite" =~ ^[0-9][0-9]*$ ]]; then	
+                search_elite_configs $elite $DIR_FILE
+            fi
+        done
+        len=`expr length "$DIR_FILE"`
+        printf "#   %${len}s  $ELITES_CONFIG\n" 
 
     done     
 }

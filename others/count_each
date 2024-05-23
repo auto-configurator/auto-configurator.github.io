@@ -50,9 +50,9 @@ for folder in $DIR_crace ; do
                     echo -e \
                     \ exp-$i: quality: $c_q, num_config: $c_used, num_ins: $c_ins  >> "$PARA_DIR/count.log"
                     avg_q=$( printf "%.5f" `echo "scale=5;$avg_q+$c_q" | bc` )
-                    let n_sampled=n_sampled+$c_sampled
-                    let n_used=n_used+$c_used
-                    let n_ins=n_ins+$c_ins
+                    let n_sampled=n_sampled+c_sampled
+                    let n_used=n_used+c_used
+                    let n_ins=n_ins+c_ins
                     if [ $i == $COUNT ] ; then
                         echo -e '\n'\
                         sum_sampled: $n_sampled,'\t' sum_used: $n_used,'\t' sum_ins: $n_ins '\n'\

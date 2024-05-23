@@ -16,10 +16,10 @@ class DrawPlot:
         self.out_dir = reader.outDir.value
         self.drawMethod = reader.drawMethod.value
         self.dataType = reader.dataType.value
-        methods = ('parallelcoord', 'parallelcat', 'piechart')
+        methods = ('parallelcoord', 'parallelcat', 'sunburst')
 
         try:
-            if self.dataType == "quality":
+            if self.dataType == "performance":
                 load = Performance(reader)
             elif self.dataType == "parameters":
                 load = Parameters(reader)

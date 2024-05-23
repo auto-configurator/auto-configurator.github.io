@@ -1,7 +1,7 @@
 import os
 import sys
 import json
-
+from datetime import datetime
 from plot.errors import PlotError, OptionError, FileError, ParameterValueError
 from plot.containers.options import IntegerOption, RealOption, StringOption, BooleanOption, FileOption, \
     ExeOption, EnablerOption
@@ -220,7 +220,7 @@ class ReadOptions:
             self.numRepetitions.value = len(exp_folders)
 
         if self.dataType.value is None:
-            # if self.drawMethod.value in "(parallelcoord, parallelcat, piechart, \
+            # if self.drawMethod.value in "(parallelcoord, parallelcat, sunburst, \
             # pairplot, histplot, jointplot)":
             #     self.dataType.value = "parameters"
             # if self.drawMethod.value == "boxplot" and "elites" in self.numConfigurations.value:
@@ -250,8 +250,8 @@ class ReadOptions:
             or len(self.keyParameter.value.split(',')) > 1):
             raise ParameterValueError("!   Parameter 'keyParameter'(-k) must be provided here!")
 
-        if self.drawMethod.value not in "(parallelcoord, piechart, \
-            pairplot, histplot, jointplot, boxplot, heatmap)" and self.multiParameters.value is not None:
+        if self.drawMethod.value not in "(parallelcoord, sunburst, parallelcat\
+            pairplot, histplot, jointplot, boxplot, violinplot, heatmap)" and self.multiParameters.value is not None:
             raise ParameterValueError("!   Parameter 'multiParameters'(-m) should not be provided here!")
       
         if self.drawMethod.value in "(jointplot, parallelcat)":
@@ -281,6 +281,11 @@ class ReadOptions:
 
         if self.numConfigurations.value != 'else':
             self.elseNumConfigs.value = 'null'
+
+        if self.fileName.value is None:
+            current_time = datetime.now()
+            formatted_time = current_time.strftime("Plot %Y-%m-%d at %H:%M.%S.png")
+            self.fileName.value = formatted_time
 
     def get_option(self, option_name):
         """

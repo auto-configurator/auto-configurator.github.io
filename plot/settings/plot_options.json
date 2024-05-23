@@ -65,10 +65,10 @@
         "type": "s",
         "short": "-f",
         "long": "--file-name",
-        "default": "plot.png",
+        "default": "",
         "section":"Plot file",
         "description": "The name of the output plot file.",
-        "vignettes": "The name of the output plot file. The default value of this option is 'plot.png'. This option is only avaliable when \\parameter{execDir} and \\parameter{drawMethod} are not None."
+        "vignettes": "The name of the output plot file. The default value of this option is 'current time'. This option is only avaliable when \\parameter{execDir} and \\parameter{drawMethod} are not None."
     },
     {
         "name": "drawMethod",
@@ -76,7 +76,7 @@
         "short": "-d",
         "long": "--draw-method",
         "default": "",
-        "domain": "(boxplot, violinplot, parallelcoord, parallelcat, piechart, pairplot, histplot, jointplot, heatmap)",
+        "domain": "(boxplot, violinplot, parallelcoord, parallelcat, sunburst, pairplot, histplot, jointplot, heatmap)",
         "section": "Draw plot",
         "description": "The method chose to draw a plot for the Crace results.",
         "vignettes": "The funtion chose to analyse the \\Crace results. If this option is not null, \\execDir must to be provided.\n When one method is chosen, the correspoding option must be True.\n "
@@ -87,10 +87,10 @@
         "short": "-dt",
         "long": "--data-type",
         "default": "",
-        "domain": "(quality, parameters, configurations)",
+        "domain": "(performance, parameters, configurations)",
         "section": "Draw plot",
         "description": "The origin of data used for drawing plot(s).",
-        "vignettes": "What type of the data used for drawing plot(s), which includes the quality of configurations from experiment(s), \nthe parameters of configuration(s) from one experiment and the quality of configurations from one experiment.\n"
+        "vignettes": "What type of the data used for drawing plot(s), which includes the performance of configurations from experiment(s), \nthe parameters of configuration(s) from one experiment and the performance of configurations from one experiment.\n"
     },
     {
         "name": "numConfigurations",

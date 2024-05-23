@@ -8,22 +8,63 @@ fi
 DIR_race=$*
 
 TIME_LOG="time.log"
+tmp_file="tmp_time"
 
 echo "\`-reading..."
 
+# macOS
+relative_path() {
+  local source=$1
+  local target=$2
+
+  local common_part=$source  
+  local back=""
+  while [ "${target#$common_part}" = "${target}" ]; do
+    common_part=$(dirname "$common_part")
+    back="../${back}"
+  done
+
+  if [[ $common_part == "." ]]; then
+    common_part=""
+  fi
+
+  local forward_part="${target#$common_part/}"
+
+  local result="${back}${forward_part}"
+  echo $result
+}
+
+absolute_path() {
+  local target=$1
+  echo "$(cd "$(dirname "$target")"; pwd)/$(basename "$target")"
+}
+
 for folder in $DIR_race; do
-    echo -e "$(date "+%Y-%m-%d %H:%M:%S") Time consuming: \n" > "$folder/$TIME_LOG"
-    find $folder -type f -name "irace.train" | sort -n | while read line
-    do
+    # echo -e "$(date "+%Y-%m-%d %H:%M:%S") Time consuming: \n" > "$folder/$TIME_LOG"
+    # macOS
+    find $folder -type f -name "irace.train" | sort -n > "$folder/$tmp_file"
+    if [[ -s "$folder/$tmp_file" ]]; then 
+      echo "$(date "+%Y-%m-%d %H:%M:%S") Time consuming:  \n" > "$folder/$TIME_LOG"
+    else
+      rm "$folder/$tmp_file"
+      continue
+    fi
+    
+    time_list=()
+    while read line; do
         EXP_DIR=${line%/*}
         RELATIVE_EXP_DIR=$( realpath --relative-to=$folder $EXP_DIR )
-        time1=$( cat "$EXP_DIR/irace.train" | grep "START" | cut -d ':' -f2- )
-        time2=$( cat "$EXP_DIR/irace.train" | grep "Stopped" | cut -d ':' -f1,3 | cut -d ' ' -f2,3)
-        epoch1=$(date -d "$time1" +%s)
-        epoch2=$(date -d "$time2" +%s)
+        time1=$( cat "$EXP_DIR/irace.train" | grep "START" | cut -d ':' -f2- | cut -d ' ' -f2,3)
+        time2=$( cat "$EXP_DIR/irace.train" | grep "Stopped" | cut -d ':' -f1-3 | cut -d ' ' -f2,3)
+        # epoch1=$(date -d "$time1" +%s)
+        # epoch2=$(date -d "$time2" +%s)
+        # macOS
+        epoch1=$(date -j -f "%Y-%m-%d %H:%M:%S" "$time1" +"%s")
+        epoch2=$(date -j -f "%Y-%m-%d %H:%M:%S" "$time2" +"%s")
         diffSec=$((epoch2 - epoch1))
 
         diffHr=$(echo "$diffSec" | awk '{printf "%.2f", $1/3600}')
+        time_list+=($diffHr)
 
         budget=$( cat "$EXP_DIR/irace.train" | grep "Estimating execution time using 0.3% of" | awk '{for(i=1;i<=NF;i++) if ($i=="of") print $(i+1)}' )
         estimation=$( cat "$EXP_DIR/irace.train" | grep "Estimating execution time using 0.3% of" | awk '{print $NF}' )
@@ -36,13 +77,31 @@ for folder in $DIR_race; do
 
         scenario=$( cat "$EXP_DIR/irace.train" | grep "\-\-scenario" | awk '{print $NF}' ) 
 
-        echo -e $RELATIVE_EXP_DIR: '\n' \
+        # echo -e $RELATIVE_EXP_DIR: '\n' \
+        # macOS
+        echo $RELATIVE_EXP_DIR: '\n' \
         \ Budget: $budget \(Estimation: $estimation\), '\t'boundMax: $boundMax '\n' \
         \ Scenario: ${scenario} '\n' \
         \ Parallel: $parallel '\n' \
         \ Start time: $time1, '\t'Stop time: $time2 '\n' \
         \ Time difference: $diffHr Hour\(s\) '\n' >> "$folder/$TIME_LOG"
-    done
+    done < "$folder/$tmp_file"
+    rm "$folder/$tmp_file"
+
+    sorted_time=($(echo "${time_list[@]}" | tr ' ' '\n' | sort -n))
+    length=${#sorted_time[@]}
+    min=${sorted_time[0]}
+    max=${sorted_time[length-1]}
+    mid_index=$(( length / 2 ))
+    if [ $(( length % 2 )) -eq 0 ]; then
+        sum=$( echo "scale=2; ${sorted_time[mid_index]} + ${sorted_time[mid_index-1]}" | bc )
+        median=$( echo "scale=2; $sum / 2" | bc )
+    else
+        median=${sorted_time[mid_index]}
+    fi
+    # echo -e '\n'\
+    # macOS
+    echo "\nMax time: $max \nMedian time: $median \nMin time: $min \n " >> "$folder/$TIME_LOG"
     echo "|-- $folder/$TIME_LOG is saved."
 done
 

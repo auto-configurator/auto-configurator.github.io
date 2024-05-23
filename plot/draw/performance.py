@@ -11,6 +11,7 @@ from plot.containers.read_options import ReadOptions
 from plot.draw.data import ReadResults
 
 sns.set_theme(rc={'figure.figsize':(11.7,8.27)})
+sns.color_palette("vlag", as_cmap=True)
 
 class Performance:
     """
@@ -108,10 +109,10 @@ class Performance:
                         data_exp = data.loc[data['exp_name']==exp_names[n]]
                         if self.showfliers == True:
                             fig = sns.boxplot(
-                                x='config_id', y='quality', data=data_exp, width=0.5, fliersize=1, linewidth=0.5, palette="Set2", ax=axis[i,j])
+                                x='config_id', y='quality', data=data_exp, width=0.5, fliersize=1, linewidth=0.5, palette="vlag", ax=axis[i,j])
                         else:
                             fig = sns.boxplot(
-                                x='config_id', y='quality', data=data_exp, width=0.5, showfliers=False, linewidth=0.5, palette="Set2", ax=axis[i,j])
+                                x='config_id', y='quality', data=data_exp, width=0.5, showfliers=False, linewidth=0.5, palette="vlag", ax=axis[i,j])
                         print(elite_ids[exp_names[n]])
                         fig.set_xticklabels(elite_ids[exp_names[n]], rotation=0, fontsize=10)
                         fig.set_xlabel(exp_names[n])
@@ -123,10 +124,10 @@ class Performance:
                     data_exp = data.loc[data['exp_name']==exp_names[n]]
                     if self.showfliers == True:
                         fig = sns.boxplot(
-                            x='config_id', y='quality', data=data_exp, width=0.5, fliersize=1, linewidth=0.5, palette="Set2", ax=axis[i])
+                            x='config_id', y='quality', data=data_exp, width=0.5, fliersize=1, linewidth=0.5, palette="vlag", ax=axis[i])
                     else:
                         fig = sns.boxplot(
-                            x='config_id', y='quality', data=data_exp, width=0.5, showfliers=False, linewidth=0.5, palette="Set2", ax=axis[i])
+                            x='config_id', y='quality', data=data_exp, width=0.5, showfliers=False, linewidth=0.5, palette="vlag", ax=axis[i])
                     fig.set_xticklabels(elite_ids[exp_names[n]], rotation=0)
                     fig.set_xlabel(exp_names[n])
                     if i != 0:
@@ -134,10 +135,10 @@ class Performance:
                     n += 1 
             else:
                 if self.showfliers == True:
-                    fig = sns.boxplot(x='config_id', y='quality', data=data, width=0.5, fliersize=2, linewidth=0.5, palette="Set2") 
+                    fig = sns.boxplot(x='config_id', y='quality', data=data, width=0.5, fliersize=2, linewidth=0.5, palette="vlag") 
 
                 else:
-                    fig = sns.boxplot(x='config_id', y='quality', data=data, width=0.5, showfliers=False, linewidth=0.5, palette="Set2") 
+                    fig = sns.boxplot(x='config_id', y='quality', data=data, width=0.5, showfliers=False, linewidth=0.5, palette="vlag") 
                 fig.set_xticklabels(elite_ids[exp_names[0]], rotation=0)
                 fig.set_xlabel(exp_names[0])
 
@@ -147,9 +148,9 @@ class Performance:
             print("#   {}".format(ids))
 
             if self.showfliers == True:
-                fig = sns.boxplot(x='exp_name', y='quality', data=data, width=0.5, fliersize=2, linewidth=0.5, palette="Set2")
+                fig = sns.boxplot(x='exp_name', y='quality', data=data, width=0.5, fliersize=2, linewidth=0.5, palette="vlag")
             else:
-                fig = sns.boxplot(x='exp_name', y='quality', data=data, width=0.5, showfliers=False, linewidth=0.5, palette="Set2")
+                fig = sns.boxplot(x='exp_name', y='quality', data=data, width=0.5, showfliers=False, linewidth=0.5, palette="vlag")
 
             fig.set_xlabel('\n{}'.format(ids))
 
@@ -197,11 +198,15 @@ class Performance:
                 finally:
                     sys.stdout = original_stdout
 
-        
+        scenarios = ['tsp', 'TSP', 'qap', 'QAP', 'pso', 'PSO', 'sat', 'SAT', 'emili', 'EMILI', 'pfsp', 'PFSP']
+        if any(k in self.exec_dir for k in scenarios):
+            fig.set_ylabel('mean quality')
+        else:
+            fig.set_ylabel('mean runtime')
         plot = fig.get_figure()
         plt.suptitle(self.title, size=15)
         plot.savefig(self.save_name, dpi=self.dpi)
-        print("# {} has been saved.".format(self.file_name))
+        print("#\n# {} has been saved.".format(self.file_name))
 
     def draw_violinplot(self, data, exp_names, elite_ids):
         """
@@ -239,7 +244,7 @@ class Performance:
                     for j in range(0, column):
                         data_exp = data.loc[data['exp_name']==exp_names[n]]
                         fig = sns.violinplot(
-                            x='config_id', y='quality', data=data_exp, inner="point", width=0.5, linewidth=0.5, palette="Set2", ax=axis[i,j])
+                            x='config_id', y='quality', data=data_exp, inner="point", width=0.5, linewidth=0.5, palette="vlag", ax=axis[i,j])
                         fig.set_xticklabels(elite_ids[exp_names[n]], rotation=0, fontsize=10)
                         fig.set_xlabel(exp_names[n])
                         if j != 0:
@@ -249,14 +254,14 @@ class Performance:
                 for i in range(0, column):
                     data_exp = data.loc[data['exp_name']==exp_names[n]]
                     fig = sns.violinplot(
-                        x='config_id', y='quality', data=data_exp, inner="point", width=0.5, linewidth=0.5, palette="Set2", ax=axis[i])
+                        x='config_id', y='quality', data=data_exp, inner="point", width=0.5, linewidth=0.5, palette="vlag", ax=axis[i])
                     fig.set_xticklabels(elite_ids[exp_names[n]], rotation=0)
                     fig.set_xlabel(exp_names[n])
                     if i != 0:
                         fig.set_ylabel('')
                     n += 1
             else:
-                fig = sns.violinplot(x='config_id', y='quality', data=data, inner="point", width=0.5, linewidth=0.5, palette="Set2")
+                fig = sns.violinplot(x='config_id', y='quality', data=data, inner="point", width=0.5, linewidth=0.5, palette="vlag")
                 fig = sns.swarmplot(x='config_id', y='quality', data=data, size=3) 
                 fig.set_xticklabels(elite_ids[exp_names[0]], rotation=0)
                 fig.set_xlabel(exp_names[0])
@@ -266,7 +271,7 @@ class Performance:
             ids = re.sub('}','',re.sub('{','',re.sub('\'','',str(elite_ids))))
             print("#   {}".format(ids))
 
-            fig = sns.violinplot(x='exp_name', y='quality', data=data, inner=None, width=0.5, linewidth=0.5, palette="Set2")
+            fig = sns.violinplot(x='exp_name', y='quality', data=data, inner=None, width=0.5, linewidth=0.5, palette="vlag")
             fig = sns.swarmplot(x='exp_name', y='quality', data=data, size=3, palette='pink')
             fig.set_xlabel('\n{}'.format(ids))
         
