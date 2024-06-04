@@ -170,12 +170,22 @@
     {
         "name": "showfliers",
         "type": "b",
-        "short": "-s",
+        "short": "-sf",
         "long": "--showfliers",
-        "default": 1,
+        "default": 0,
         "section": "Draw plot",
         "description": "The parameter showfliers used for saving plot.",
         "vignettes": "Enable\/disable showfliers when drawing the picture."
+    },
+    {
+        "name": "showmeans",
+        "type": "b",
+        "short": "-sm",
+        "long": "--showmeans",
+        "default": 0,
+        "section": "Draw plot",
+        "description": "The parameter showmeans used for saving plot.",
+        "vignettes": "Enable\/disable showmeans when drawing the picture."
     },
     {
         "name": "statisticalTest",

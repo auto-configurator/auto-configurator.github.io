@@ -246,30 +246,35 @@ class ReadOptions:
             path_name2 = os.path.basename(os.path.dirname(self.execDir.value))
             self.title.value = self.drawMethod.value+': '+path_name2+'/'+path_name1
 
-        if self.drawMethod.value in "(pairplot)" and (self.keyParameter.value is None
+        if self.drawMethod.value not in ("boxplot", "violinplot") and (
+            self.showfliers.value is True or self.showmeans.value is True 
+        ):
+            raise ParameterValueError("!   Parameter '{}' should not be provided here!".format(x for x in (self.showfliers.name, self.showmeans.name) if x is True))
+
+        if self.drawMethod.value in ("pairplot") and (self.keyParameter.value is None
             or len(self.keyParameter.value.split(',')) > 1):
             raise ParameterValueError("!   Parameter 'keyParameter'(-k) must be provided here!")
 
-        if self.drawMethod.value not in "(parallelcoord, sunburst, parallelcat\
-            pairplot, histplot, jointplot, boxplot, violinplot, heatmap)" and self.multiParameters.value is not None:
+        if self.drawMethod.value not in ("parallelcoord", "sunburst", "parallelcat"\
+            "pairplot", "histplot", "jointplot", "boxplot", "violinplot", "heatmap") and self.multiParameters.value is not None:
             raise ParameterValueError("!   Parameter 'multiParameters'(-m) should not be provided here!")
       
-        if self.drawMethod.value in "(jointplot, parallelcat)":
+        if self.drawMethod.value in ("jointplot", "parallelcat"):
             if self.multiParameters.value is None or len(self.multiParameters.value.split(',')) != 2:
                 raise ParameterValueError("!   When '{}' is called, two parameter names must be provided!".format(self.drawMethod.value))
 
-        if self.drawMethod.value in "(heatmap)":
+        if self.drawMethod.value in ("heatmap"):
             if self.multiParameters.value is None or len(self.multiParameters.value.split(',')) > 2:
                 raise ParameterValueError("!   When '{}' is called, one or two parameter names must be provided!".format(self.drawMethod.value))
 
-        if self.statisticalTest.value in (True, "True", "ture") and self.drawMethod.value not in "(boxplot, violinplot)":
+        if self.statisticalTest.value in (True, "True", "ture") and self.drawMethod.value not in ("boxplot", "violinplot"):
             raise ParameterValueError("!   When '{}' is enable, drawMethod must be in (boxplot, violinplot)!".format(self.statisticalTest.value))
 
-        if (self.slice.value is True and self.drawMethod.value in "(histplot)"
+        if (self.slice.value is True and self.drawMethod.value in ("histplot")
             and self.multiParameters.value is None):
             raise ParameterValueError("!   Parameter 'multiParameters'(-m) must be provided here!")
 
-        if not self.slice.is_set() and self.drawMethod.value in "(boxplot, heatmap)":
+        if not self.slice.is_set() and self.drawMethod.value in ("boxplot", "heatmap"):
             self.set_option(self.slice, True)
 
         if self.resultsFrom.value == 'test' and self.numConfigurations.value == 'all':

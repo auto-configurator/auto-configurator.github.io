@@ -247,8 +247,11 @@ def extract_number(folder):
     # l = [int(x) if x else float('inf') for x in match]
     return tuple(int(num) for num in match)
 
-def plot_final_elite_results(folders, rpd, repetitions=0, title="", output_filename="output", show: bool=True, stest: bool=False, annot: bool=False, ori: bool=False, column: int=2):
+def plot_final_elite_results(folders, rpd, repetitions=0, title="", output_filename="plot", stest: bool=False, annot: bool=False, showfliers: bool=False, showmeans: bool=False, ori: bool=False, column: int=2):
     """
+
+    plot_final_elite_results(folders, args.rdp, args.repetitions, args.title,
+                            args.output, args.st, args.sa, args.sf, args.sm, args.so, args.column)
     You can either call this method directly or use the command line script (further down).
 
     :param folders:
@@ -258,7 +261,7 @@ def plot_final_elite_results(folders, rpd, repetitions=0, title="", output_filen
     :return:
     """
     directory = ""
-    if title not in (None, 'null', ' ', ''): output_filename = title
+    if title not in (None, 'None', 'null', ''): output_filename = title
     all_results = pd.DataFrame()
     all_metrics = pd.DataFrame()
 
@@ -317,6 +320,19 @@ def plot_final_elite_results(folders, rpd, repetitions=0, title="", output_filen
                     tmp = pd.DataFrame([[folder_name, exp, quality, med[exp], std[exp]]], columns=['folder', 'exp_name', 'avg', 'med', 'std'])
                     all_metrics = pd.concat([all_metrics, tmp], ignore_index=True)
 
+
+    l = logging.getLogger('st_log')
+    filehandler = logging.FileHandler(directory + "/" + output_filename + '.log', mode='w')
+    filehandler.setLevel(0)
+    streamhandler = logging.StreamHandler()
+    l.setLevel(logging.DEBUG)
+    l.addHandler(filehandler)
+    l.addHandler(streamhandler)
+
+    l.debug(f"All metrics:\n{all_metrics}")
+    l.debug(f"\nAll medians: \n{all_metrics['med'].groupby(all_metrics['folder']).median()}")
+    l.debug(f"\nAll avgs: \n{all_metrics['avg'].groupby(all_metrics['folder']).mean()}")
+
     if rpd is not None:
         all_results = compute_rpd(all_results, rpd)
 
@@ -360,22 +376,13 @@ def plot_final_elite_results(folders, rpd, repetitions=0, title="", output_filen
     fig, axis = plt.subplots()  # pylint: disable=undefined-variable
     fig.subplots_adjust(left=left_margin, right=right_margin, top=top_margin, bottom=bottom_margin)
 
-    if not show:
-        fig = sns.boxplot(x='folder', y='quality', data=all_results, 
-                          whis=0.8, showfliers=False, 
-                          showmeans=True,
-                          meanprops={"marker": "+", 
-                                     "markeredgecolor": "black",
-                                     "markersize": "8"},
-                          width=0.5, linewidth=.5, palette='vlag')
-    else:
-        fig = sns.boxplot(x='folder', y='quality', data=all_results, 
-                          whis=0.8, showfliers=True, fliersize=fliersize, 
-                          showmeans=True,
-                          meanprops={"marker": "+", 
-                                     "markeredgecolor": "black",
-                                     "markersize": "8"},
-                          width=0.5, linewidth=.5, palette='vlag')
+    fig = sns.boxplot(x='folder', y='quality', data=all_results,
+                        whis=0.8, showfliers=showfliers, fliersize=fliersize,
+                        showmeans=showmeans,
+                        meanprops={"marker": "+",
+                                    "markeredgecolor": "black",
+                                    "markersize": "8"},
+                        width=0.5, linewidth=.5, palette='vlag')
 
     # show original points
     if ori:
@@ -393,14 +400,6 @@ def plot_final_elite_results(folders, rpd, repetitions=0, title="", output_filen
     #     for x in order[1:]:
     #         pairs.append((order[0],x))
 
-    l = logging.getLogger('st_log')
-    filehandler = logging.FileHandler(directory + "/" + output_filename + '.log', mode='w')
-    filehandler.setLevel(0)
-    streamhandler = logging.StreamHandler()
-    l.setLevel(logging.DEBUG)
-    l.addHandler(filehandler)
-    l.addHandler(streamhandler)
-
      ###############################################################################
     #   SSSSS  TTTTT   AAA   TTTTT  IIIII  SSSSS  TTTTT  IIIII  CCCCC   AAA   L     #
     #   S        T    A   A    T      I    S        T      I   C       A   A  L     #
@@ -416,11 +415,6 @@ def plot_final_elite_results(folders, rpd, repetitions=0, title="", output_filen
      ###############################################################################
 
     if stest in (True, "True", "ture"):
-
-        l.debug(f"All metrics:\n{all_metrics}")
-
-        l.debug(f"\nAll medians: \n{all_metrics['med'].groupby(all_metrics['folder']).median()}")
-
 
         ############################# CHECK RESULTS #############################
         #                           Shapiro-Wilk Test                           #
@@ -543,16 +537,16 @@ def plot_final_elite_results(folders, rpd, repetitions=0, title="", output_filen
             finally:
                 sys.stdout = original_stdout
 
-    if title not in (None, 'None' 'null'): fig.set_xlabel('\n'+title, size=fontSize)
+    if title not in (None, 'None', 'null', ''): fig.set_xlabel('\n'+title, size=fontSize)
     scenarios = ['tsp', 'TSP', 'qap', 'QAP', 'pso', 'PSO', 'sat', 'SAT', 'emili', 'EMILI', 'pfsp', 'PFSP']
     if any(k in folder for folder in new_folders for k in scenarios):
         fig.set_ylabel('mean quality', size=fontSize)
     else:
         fig.set_ylabel('mean runtime', size=fontSize)
     xlables = fig.get_xticklabels()
-    l_xlables = sum(len(str(x)) for x in xlables)
-    print(l_xlables)
-    if l_xlables > 25:
+    l_xlables = sum(len(x.get_text()) for x in xlables)
+    # print(xlables)
+    if l_xlables > 40:
         plt.xticks(rotation=90, size=fontSize)
     else:
         plt.xticks(rotation=0, size=fontSize)
@@ -571,12 +565,13 @@ def parse_arguments():
     parser.add_argument('--title', '-t', default="", help="The title of the plot.")
     parser.add_argument('--repetitions', '-r', default=0, type=int, help="The number of repetitions of the experiment")
     parser.add_argument("--statistical-test", "-st", type=bool, default=False, help="Do statistical test or not", dest="st")
-    parser.add_argument("--show-annotation", "-a", type=bool, default=False, help="Show annotation or not", dest="annot")
+    parser.add_argument("--show-means", "-sm", type=bool, default=False, help="Show means or not", dest="sm")
+    parser.add_argument("--showfliers", "-sf", type=bool, default=False, help="show fliers or not", dest="sf")
+    parser.add_argument("--show-annotation", "-sa", type=bool, default=False, help="Show annotation or not", dest="sa")
+    parser.add_argument("--show-original", "-so", type=bool, default=False, help="Show original points or not", dest="so")
     parser.add_argument("--column", "-c", default=2, type=int, help="How many columns is Plot is used in how many columns", dest="column")
-    parser.add_argument("--show-original", "-sa", type=bool, default=False, help="Show original points or not", dest="original")
     parser.add_argument("--folder", "-e", nargs='+', help="A list of folders to include, supports glob expansion")
     parser.add_argument("--output", "-o", default="plot", help="The name of the output file(.png)")
-    parser.add_argument("--showfliers", "-s", type=bool, default=True, help="show fliers or not")
     parser.add_argument("--relative-difference", "-rpd", nargs='?', type=int, default=None, const=math.inf, dest="rdp",
                         help="The best known quality. If only the flag -rpd is set, "
                              "then the minimum value from the test set will be used.")
@@ -595,8 +590,8 @@ def execute_from_args():
     check_for_dependencies()
     folders = expand_folder_arg(args.folder)
 
-    plot_final_elite_results(folders, args.rdp, args.repetitions, args.title, 
-                             args.output, args.showfliers, args.st, args.annot, args.original, args.column)
+    plot_final_elite_results(folders, args.rdp, args.repetitions, args.title,
+                             args.output, args.st, args.sa, args.sf, args.sm, args.so, args.column)
 
 
 if __name__ == "__main__":

@@ -36,6 +36,7 @@ class Configurations:
 
         self.dpi = options.dpi.value
         self.showfliers = options.showfliers.value
+        self.showmeans = options.showmeans.value
 
         if options.numConfigurations.value == "elites":
             self.num_config = 5
@@ -134,22 +135,17 @@ class Configurations:
         # draw the plot
         fig, axis = plt.subplots()  # pylint: disable=undefined-variable
         sns.set_theme(font_scale=1.5)
-        if self.showfliers == True:
-            fig = sns.boxplot(x='config_id', y='quality', data=elite_results, \
-                              order=elite_ids_sorted, \
-                              width=0.5, showfliers=True, fliersize=2,\
-                              linewidth=0.5, palette="vlag")
-            if max(results_count_sorted.values()) <= 30:
-                fig = sns.stripplot(x='config_id', y='quality', data=elite_results,
-                                    color='darkred', size=2, jitter=True)
-        else:
-            fig = sns.boxplot(x='config_id', y='quality', data=elite_results, \
-                              order=elite_ids_sorted, \
-                              width=0.5, showfliers=False,\
-                              linewidth=0.5, palette="vlag")
-            if max(results_count_sorted.values()) <= 30:
-                fig = sns.stripplot(x='config_id', y='quality', data=elite_results,
-                                    color='darkred', size=2, jitter=True)
+        fig = sns.boxplot(x='config_id', y='quality', data=elite_results, \
+                            order=elite_ids_sorted, \
+                            width=0.5, showfliers=self.showfliers, fliersize=2,\
+                            showmeans=self.showmeans,
+                            meanprops={"marker": "+",
+                                        "markeredgecolor": "black",
+                                        "markersize": "8"},
+                            linewidth=0.5, palette="vlag")
+        if max(results_count_sorted.values()) <= 30:
+            fig = sns.stripplot(x='config_id', y='quality', data=elite_results,
+                                color='darkred', size=2, jitter=True)
 
         # add p-value for the configurations who have the most instances
         if len(pairs) > 1:

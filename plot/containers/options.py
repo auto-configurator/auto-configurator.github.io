@@ -402,6 +402,10 @@ class BooleanOption(Option):
         elif not isinstance(value, bool):
             if isinstance(value, int):
                 return bool(value)
+            elif value in ("true", "TRUE"):
+                return bool(True)
+            elif value in ("false", "FALSE"):
+                return bool(False)
             else:
                 return bool(eval(value))
         else:
